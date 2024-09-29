@@ -288,8 +288,8 @@ def generate_time_series_forecasts(model, val_loader, method: str = 'none')-> li
             if method == 'mean':
                 forecasts.append(outputs.sequences.mean(dim = 1).cpu().numpy())
             elif method == 'median':
-                values, _ = outputs.sequences.median(dim = 1).cpu().numpy()
-                forecasts.append(values)              
+                values, _ = outputs.sequences.median(dim = 1)
+                forecasts.append(values.cpu().numpy())              
             else:
                 forecasts.append(outputs.sequences.cpu().numpy())
 
@@ -357,7 +357,7 @@ def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_leng
         Progress() as progress
     ):
         n_batches = sum(1 for __ in val_loader) 
-        validation_task = progress.add_task('[green]Evaluating model', total = (pred_length) * n_batches)
+        validation_task = progress.add_task('[green]Evaluating model', total = ((pred_length) * n_batches) - 1)
 
         for batch in val_loader:
             outputs = model.generate(
@@ -370,7 +370,8 @@ def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_leng
             if method == 'mean':
                 mean_pred = outputs.sequences.mean(dim=1).cpu().numpy()[0]
             elif method == 'median':
-                mean_pred, _ = outputs.sequences.median(dim=1).cpu().numpy()[0]
+                mean_pred, _ = outputs.sequences.median(dim=1)
+                mean_pred = mean_pred.cpu().numpy()[0]
 
             val_data_array = np.array([val_data[i]['target'] for i in range(len(val_data))]).transpose(1, 0)
             ground_truth = val_data_array[-pred_length:]
