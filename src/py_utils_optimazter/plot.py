@@ -25,21 +25,3 @@ def plot_loss(f):
         plt.draw()
         return loss_hist
     return wrapper
-
-
-@dataclass
-class PandasNormalizer:
-
-    df_min: Series = None
-    df_max: Series = None 
-
-
-    def normalize(self, df: DataFrame)->DataFrame:
-        self.df_min = df.min()
-        self.df_max = df.max()
-        df = (df - self.df_min) / (self.df_max - self.df_min)
-        return df
-    
-    def denormalize(self, df: DataFrame)->DataFrame:
-        df = df * (self.df_max - self.df_min) + self.df_min
-        return df
