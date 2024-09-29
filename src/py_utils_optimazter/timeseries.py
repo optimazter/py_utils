@@ -115,7 +115,7 @@ def create_train_dataloader(
     **kwargs,
 ) -> Iterable:
     
-    TRAINING_INPUT_NAMES = prediction_input_names + training_input_names if training_input_names else []
+    TRAINING_INPUT_NAMES = prediction_input_names + (training_input_names if training_input_names else [])
 
 
     transformation = create_transformation(freq, config, ndim)
@@ -265,7 +265,15 @@ def train_time_series_model(
 
 
 
-def generate_time_series_forecasts(model, val_loader, method: str = 'none')-> list:
+def generate_time_series_forecasts(
+    model, 
+    val_loader, 
+    method: str = 'none',
+    prediction_input_names: list = [
+        'past_values',
+        'past_observed_mask',
+        ],
+    )-> list:
 
     assert method in ['mean', 'median', 'none']
 
@@ -278,12 +286,10 @@ def generate_time_series_forecasts(model, val_loader, method: str = 'none')-> li
 
     with torch.no_grad():
         for batch in val_loader:
-            outputs = model.generate(
-                past_time_features=batch['past_time_features'].to(device),
-                past_values=batch['past_values'].to(device),
-                future_time_features=batch['future_time_features'].to(device),
-                past_observed_mask=batch['past_observed_mask'].to(device),
-            )
+
+            outputs = model.generate(**{
+                    key : batch[key].to(device) for key in prediction_input_names
+                })
             if method == 'mean':
                 forecasts.append(outputs.sequences.mean(dim = 1).cpu().numpy())
             elif method == 'median':
