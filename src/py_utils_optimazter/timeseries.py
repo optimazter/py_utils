@@ -108,19 +108,15 @@ def create_train_dataloader(
     shuffle_buffer_length: int = None,
     cache_data: bool = True,
     prediction_input_names: list = [
-        'past_time_features',
         'past_values',
         'past_observed_mask',
-        'future_time_features',
     ],
+    training_input_names : list = None,
     **kwargs,
 ) -> Iterable:
+    
+    TRAINING_INPUT_NAMES = prediction_input_names + training_input_names if training_input_names else []
 
-
-    TRAINING_INPUT_NAMES = prediction_input_names + [
-        'future_values',
-        'future_observed_mask',
-    ]
 
     transformation = create_transformation(freq, config, ndim)
     transformed_data = transformation.apply(data, is_train=True)
@@ -154,10 +150,8 @@ def create_backtest_dataloader(
     ndim: int,
     batch_size: int,
     prediction_input_names: list = [
-        'past_time_features',
         'past_values',
         'past_observed_mask',
-        'future_time_features',
     ],
     **kwargs,
 ):
@@ -185,10 +179,8 @@ def create_test_dataloader(
     batch_size: int,
     ndim: int,
     prediction_input_names: list = [
-        'past_time_features',
         'past_values',
         'past_observed_mask',
-        'future_time_features',
     ],
     **kwargs,
 ):
@@ -223,6 +215,7 @@ def train_time_series_model(
         'past_observed_mask',
         'future_time_features',
     ],
+    training_input_names : list = None,
     ) -> np.array:
 
     accelerator = Accelerator()
@@ -234,10 +227,7 @@ def train_time_series_model(
         train_loader,
     )
 
-    TRAINING_INPUT_NAMES = prediction_input_names + [
-        'future_values',
-        'future_observed_mask',
-    ]
+    TRAINING_INPUT_NAMES = prediction_input_names + training_input_names if training_input_names else []
 
 
     with Progress() as progress:
