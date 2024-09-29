@@ -51,7 +51,7 @@ def load_latest_torch_model(model: nn.Module, name:str = 'model', dir:str = 'dat
 
 
 
-def log_run(training_loss_history: list, metrics: dict = None, validation_loss_history: list = None, dir = 'data'):
+def log_run(training_loss_history: list, metrics: dict = None, hyperparameters: dict = None, validation_loss_history: list = None, dir = 'data'):
     if os.path.isfile(f'{dir}/log.json'):
         with open(f'{dir}/log.json', 'r') as f:
             log_data = json.load(f)
@@ -63,7 +63,8 @@ def log_run(training_loss_history: list, metrics: dict = None, validation_loss_h
             'datetime' : datetime.now().strftime(DATEFORMAT),
             'training_loss' : training_loss_history,
             'validation_loss' : validation_loss_history if validation_loss_history else [],
-            'metrics' : metrics
+            'metrics' : metrics if metrics else {},
+            'hyperparameters' : hyperparameters if hyperparameters else {}
         }
         json.dump(log_data, f)
 
