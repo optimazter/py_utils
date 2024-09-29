@@ -239,8 +239,6 @@ def train_time_series_model(
         'future_observed_mask',
     ]
 
-    kwargs = {key : batch[key].to(device) for key in TRAINING_INPUT_NAMES}
-
 
     with Progress() as progress:
         model.train()
@@ -257,7 +255,9 @@ def train_time_series_model(
             progress.reset(batch_task)
 
             for i, batch in enumerate(train_loader):
-                outputs = model(**kwargs)
+                outputs = model(**{
+                    key : batch[key].to(device) for key in TRAINING_INPUT_NAMES
+                })
 
                 loss = outputs.loss
                 accelerator.backward(loss)
