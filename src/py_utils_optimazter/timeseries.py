@@ -225,7 +225,6 @@ def train_time_series_model(model, train_loader, optimizer, epochs: int, plot = 
         train_loader,
     )
 
-    train_losses = []
 
     with Progress() as progress:
         model.train()
@@ -267,7 +266,9 @@ def train_time_series_model(model, train_loader, optimizer, epochs: int, plot = 
 
 
 
-def generate_time_series_forecasts(model, val_loader, mean = False)-> list:
+def generate_time_series_forecasts(model, val_loader, method: str = 'none')-> list:
+
+    assert method in ['mean', 'median', 'none']
 
     accelerator = Accelerator()
     device = accelerator.device
@@ -284,15 +285,20 @@ def generate_time_series_forecasts(model, val_loader, mean = False)-> list:
                 future_time_features=batch['future_time_features'].to(device),
                 past_observed_mask=batch['past_observed_mask'].to(device),
             )
-            if mean:
+            if method == 'mean':
                 forecasts.append(outputs.sequences.mean(dim = 1).cpu().numpy())
+            elif method == 'median':
+                forecasts.append(outputs.sequences.median(dim = 1).cpu().numpy())              
             else:
                 forecasts.append(outputs.sequences.cpu().numpy())
 
     return forecasts
 
 
-def evaluate_time_series_forecast(forecasts: list, val_data, freq: str, pred_length: int) -> tuple:
+def evaluate_time_series_forecast(forecasts: list, val_data, freq: str, pred_length: int, method: str = 'median') -> tuple:
+
+    assert method in ['median', 'mean']
+
     mase_metric = load('evaluate-metric/mase')
     smape_metric = load('evaluate-metric/smape')
 
@@ -327,12 +333,14 @@ def evaluate_time_series_forecast(forecasts: list, val_data, freq: str, pred_len
         return np.mean(mase_metrics), np.mean(smape_metrics)
 
 
-def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_length: int, freq: str):
+def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_length: int, freq: str, method: str = 'median') -> tuple:
+
+    assert method in ['median', 'mean']
+
     accelerator = Accelerator()
     device = accelerator.device
     model.to(device)
     model.eval()
-
 
     mase_metric = load('evaluate-metric/mase')
     smape_metric = load('evaluate-metric/smape')
