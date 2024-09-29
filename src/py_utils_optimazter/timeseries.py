@@ -107,16 +107,17 @@ def create_train_dataloader(
     num_batches_per_epoch: int,
     shuffle_buffer_length: int = None,
     cache_data: bool = True,
-    **kwargs,
-) -> Iterable:
-    PREDICTION_INPUT_NAMES = [
+    prediction_input_names: list = [
         'past_time_features',
         'past_values',
         'past_observed_mask',
         'future_time_features',
-    ]
+    ],
+    **kwargs,
+) -> Iterable:
 
-    TRAINING_INPUT_NAMES = PREDICTION_INPUT_NAMES + [
+
+    TRAINING_INPUT_NAMES = prediction_input_names + [
         'future_values',
         'future_observed_mask',
     ]
@@ -152,15 +153,14 @@ def create_backtest_dataloader(
     data,
     ndim: int,
     batch_size: int,
-    **kwargs,
-):
-    PREDICTION_INPUT_NAMES = [
+    prediction_input_names: list = [
         'past_time_features',
         'past_values',
         'past_observed_mask',
         'future_time_features',
-    ]
-
+    ],
+    **kwargs,
+):
     transformation = create_transformation(freq, config, ndim)
     transformed_data = transformation.apply(data)
 
@@ -175,7 +175,7 @@ def create_backtest_dataloader(
         testing_instances,
         batch_size=batch_size,
         output_type=torch.tensor,
-        field_names=PREDICTION_INPUT_NAMES,
+        field_names=prediction_input_names,
     )
 
 def create_test_dataloader(
@@ -184,15 +184,14 @@ def create_test_dataloader(
     data,
     batch_size: int,
     ndim: int,
-    **kwargs,
-):
-    PREDICTION_INPUT_NAMES = [
+    prediction_input_names: list = [
         'past_time_features',
         'past_values',
         'past_observed_mask',
         'future_time_features',
-    ]
-
+    ],
+    **kwargs,
+):
     transformation = create_transformation(freq, config, ndim)
     transformed_data = transformation.apply(data, is_train=False)
 
@@ -207,13 +206,24 @@ def create_test_dataloader(
         testing_instances,
         batch_size=batch_size,
         output_type=torch.tensor,
-        field_names=PREDICTION_INPUT_NAMES,
+        field_names=prediction_input_names,
     )
 
 
 
 @plot_loss
-def train_time_series_model(model, train_loader, optimizer, epochs: int, plot = True) -> np.array:
+def train_time_series_model(
+    model, 
+    train_loader, 
+    optimizer, 
+    epochs: int, 
+    prediction_input_names: list = [
+        'past_time_features',
+        'past_values',
+        'past_observed_mask',
+        'future_time_features',
+    ],
+    ) -> np.array:
 
     accelerator = Accelerator()
     device = accelerator.device
@@ -223,6 +233,13 @@ def train_time_series_model(model, train_loader, optimizer, epochs: int, plot = 
         optimizer,
         train_loader,
     )
+
+    TRAINING_INPUT_NAMES = prediction_input_names + [
+        'future_values',
+        'future_observed_mask',
+    ]
+
+    kwargs = {key : batch[key].to(device) for key in TRAINING_INPUT_NAMES}
 
 
     with Progress() as progress:
@@ -240,16 +257,9 @@ def train_time_series_model(model, train_loader, optimizer, epochs: int, plot = 
             progress.reset(batch_task)
 
             for i, batch in enumerate(train_loader):
-                outputs = model(
-                    past_time_features=batch['past_time_features'].to(device),
-                    past_values=batch['past_values'].to(device),
-                    future_time_features=batch['future_time_features'].to(device),
-                    future_values=batch['future_values'].to(device),
-                    past_observed_mask=batch['past_observed_mask'].to(device),
-                    future_observed_mask=batch['future_observed_mask'].to(device),
-                )
-                loss = outputs.loss
+                outputs = model(**kwargs)
 
+                loss = outputs.loss
                 accelerator.backward(loss)
                 optimizer.step()
 
