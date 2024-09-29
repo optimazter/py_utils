@@ -342,7 +342,18 @@ def evaluate_time_series_forecast(forecasts: list, val_data, freq: str, pred_len
         return np.mean(mase_metrics), np.mean(smape_metrics)
 
 
-def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_length: int, freq: str, method: str = 'median') -> tuple:
+def evaluate_time_series_model(
+    model: nn.Module, 
+    val_loader, 
+    val_data,
+    pred_length: int, 
+    freq: str, 
+    method: str = 'median',
+    prediction_input_names: list = [
+    'past_values',
+    'past_observed_mask',
+    ],
+    ) -> tuple:
 
     assert method in ['median', 'mean']
 
@@ -365,12 +376,9 @@ def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_leng
         validation_task = progress.add_task('[green]Evaluating model', total = ((pred_length) * n_batches) - 1)
 
         for batch in val_loader:
-            outputs = model.generate(
-                past_time_features=batch['past_time_features'].to(device),
-                past_values=batch['past_values'].to(device),
-                future_time_features=batch['future_time_features'].to(device),
-                past_observed_mask=batch['past_observed_mask'].to(device),
-            )
+            outputs = model.generate(**{
+                    key : batch[key].to(device) for key in prediction_input_names
+                })
 
             if method == 'mean':
                 mean_pred = outputs.sequences.mean(dim=1).cpu().numpy()[0]
