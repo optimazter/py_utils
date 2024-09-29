@@ -227,7 +227,7 @@ def train_time_series_model(
         train_loader,
     )
 
-    TRAINING_INPUT_NAMES = prediction_input_names + training_input_names if training_input_names else []
+    TRAINING_INPUT_NAMES = prediction_input_names + (training_input_names if training_input_names else [])
 
 
     with Progress() as progress:
