@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: py_utils_optimazter
+Version: 0.0.1
+Summary: Utility functions for ml projects in python
+Author-email: Adrian Hjertholm Voldseth <adrian@relu.no>
+Project-URL: Homepage, https://github.com/pypa/sampleproject
+Project-URL: Issues, https://github.com/pypa/sampleproject/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+Utility functions for python ml projects.
