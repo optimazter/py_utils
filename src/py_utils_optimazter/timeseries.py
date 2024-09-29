@@ -288,7 +288,8 @@ def generate_time_series_forecasts(model, val_loader, method: str = 'none')-> li
             if method == 'mean':
                 forecasts.append(outputs.sequences.mean(dim = 1).cpu().numpy())
             elif method == 'median':
-                forecasts.append(outputs.sequences.median(dim = 1).cpu().numpy())              
+                values, _ = outputs.sequences.median(dim = 1).cpu().numpy()
+                forecasts.append(values)              
             else:
                 forecasts.append(outputs.sequences.cpu().numpy())
 
@@ -302,7 +303,10 @@ def evaluate_time_series_forecast(forecasts: list, val_data, freq: str, pred_len
     mase_metric = load('evaluate-metric/mase')
     smape_metric = load('evaluate-metric/smape')
 
-    forecast_median = np.median(forecasts, 1).squeeze(0).T
+    if method == 'median':
+        forecast_median = np.median(forecasts, 1).squeeze(0).T
+    elif method == 'mean':
+        forecast_median = np.mean(forecasts, 1).squeeze(0).T
 
     mase_metrics = []
     smape_metrics = []
@@ -362,7 +366,11 @@ def evaluate_time_series_model(model: nn.Module, val_loader, val_data, pred_leng
                 future_time_features=batch['future_time_features'].to(device),
                 past_observed_mask=batch['past_observed_mask'].to(device),
             )
-            mean_pred = outputs.sequences.mean(dim=1).cpu().numpy()[0]
+
+            if method == 'mean':
+                mean_pred = outputs.sequences.mean(dim=1).cpu().numpy()[0]
+            elif method == 'median':
+                mean_pred, _ = outputs.sequences.median(dim=1).cpu().numpy()[0]
 
             val_data_array = np.array([val_data[i]['target'] for i in range(len(val_data))]).transpose(1, 0)
             ground_truth = val_data_array[-pred_length:]
