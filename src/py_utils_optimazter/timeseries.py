@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from transformers import PretrainedConfig
 from typing import Iterable
 import inspect
-from utils.utils import plot_loss
+from utils import plot_loss
 
 
 from gluonts.time_feature import time_features_from_frequency_str
