@@ -5,15 +5,13 @@ from torchvision.transforms import Resize
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 from rich.progress import Progress
+import numpy as np
 
 
-DATA_DIR = 'data'
-NIFTI_DIR = f'{DATA_DIR}/training'
 
 FLAIR_TIME_1 = 'flair_time01_on_middle_space'
 FLAIR_TIME_2 = 'flair_time02_on_middle_space'
 GROUND_TRUTH = 'ground_truth'
-
 
 
 def create_nifti_dataset(load_dir: str, save_path: str, img_name: str, label_name: str, resize = Resize((256, 256))) -> None:
@@ -48,15 +46,20 @@ def create_nifti_dataset(load_dir: str, save_path: str, img_name: str, label_nam
 
 
 
-def plot_nifti(nifti_imgs: list, mask: list = None, title: str = None):
+def plot_nifti(nifti_imgs: list, masks: list = None, title: str = None):
     n_cols = len(nifti_imgs) // 2 if len(nifti_imgs) >= 4 else len(nifti_imgs)
     n_rows = len(nifti_imgs) // n_cols
     fig, axes = plt.subplots(nrows = n_rows, ncols = n_cols, figsize=(n_cols / n_rows * 8, 8))
     for i, ax in enumerate(axes.flat):
         if i < len(nifti_imgs):
-            img = nifti_imgs[i] + mask[i] if mask is not None else nifti_imgs[i]
-            ax.imshow(img.permute(1, 2, 0), cmap = 'gray')
+            img = nifti_imgs[i].permute(1, 2, 0)
+            if masks:
+                mask = masks[i].permute(1, 2, 0)
+                np.concatenate((img, mask, np.zeros_like(mask)), axis = 1)
+
+            ax.imshow(img)
             ax.axis('off')
     if title:
         fig.suptitle(title, fontsize = 30)
     plt.show()
+
